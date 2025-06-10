@@ -148,11 +148,11 @@ CREATE TABLE vaccination_campaign_register (
     reason TEXT,
     is_registered BOOLEAN NOT NULL DEFAULT false,
     submit_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    submit_by UUID NOT NULL, -- parent ID
+    submit_by UUID, -- parent ID
     FOREIGN KEY (campaign_id) REFERENCES vaccination_campaign(id),
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (submit_by) REFERENCES parent(id)
-);
+);	
 
 INSERT INTO vaccination_campaign_register (
   campaign_id,
@@ -183,6 +183,7 @@ CREATE TABLE vaccination_record (
     student_id UUID NOT NULL,
     register_id INT, -- NULL nếu không đăng ký qua campaign
     description TEXT,
+	name TEXT NOT NULL, 
     location VARCHAR(255),
     vaccination_date DATE NOT NULL,
     status VARCHAR(50) NOT NULL CHECK (status IN ('completed', 'missed', 'cancelled')),
@@ -197,6 +198,7 @@ INSERT INTO vaccination_record (
   campaign_id,
   vaccination_date,
   description,
+  name,
   location,
   status
 )
@@ -206,6 +208,7 @@ VALUES
     1,
     '2025-06-15',
     'Tiêm vaccine MVAX phòng bệnh Sởi',
+	'Sởi',
     'School Medix',
     'completed'
   ),
@@ -214,6 +217,7 @@ VALUES
     1,
     '2025-06-15',
     'Tiêm vaccine MVAX phòng bệnh Sởi',
+	'Sởi',
     'School Medix',
     'completed'
   ),
@@ -222,6 +226,7 @@ VALUES
     1,
     '2025-06-16',
     'Tiêm vaccine MVAX phòng bệnh Sởi',
+	'Sởi',
     'School Medix',
     'completed'
   ),
@@ -230,9 +235,7 @@ VALUES
     1,
     '2025-06-17',
     'Tiêm vaccine MVAX phòng bệnh Sởi',
+	'Sởi',
     'School Medix',
     'completed'
   );
-
-select * from disease;
-select * from vaccine
