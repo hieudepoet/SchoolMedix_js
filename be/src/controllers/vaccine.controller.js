@@ -139,6 +139,28 @@ export async function createRegisterRequest(req, res) {
       return res.status(404).json({ error: "Campaign not found" });
     }
 
+    // Check if campaign is in progress
+    const currentDate = new Date();
+    const startDate = new Date(campaigns.rows[0].start_date);
+    const endDate = new Date(campaigns.rows[0].end_date);
+    console.log("Current Date:", currentDate);
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+    if (currentDate < startDate || currentDate > endDate) {
+      return res.status(400).json({ error: "Campaign is not in progress" });
+    }
+
+    // Check if registration already exists for the campaign
+    const existingRegistrations = await query(
+      "SELECT * FROM vaccination_campaign_register WHERE campaign_id = $1",
+      [campaign_id]
+    );
+    if (existingRegistrations.rows.length > 0) {
+      return res
+        .status(409)
+        .json({ error: "Registration already exists for the campaign" });
+    }
+
     // Find vaccine from campaign
     const vaccine_id = campaigns.rows[0].vaccine_id;
     if (!vaccine_id) {
@@ -163,28 +185,27 @@ export async function createRegisterRequest(req, res) {
     }
 
     //Get all students eligible for the campaign
-    // const studentsList = await query(
-    //   `
-    //   SELECT s.id AS student_id,
-    //     COUNT(vr.*) FILTER (WHERE vr.name = $1) AS dose_received
-    //   FROM student s
-    //   LEFT JOIN vaccination_record vr ON s.id = vr.student_id
-    //   LEFT JOIN disease d ON vr.name = d.name
-    //   GROUP BY s.id
-    // `,
-    //   [disease.rows[0].name]
-    // );
-    // console.log("Disease:", disease.rows[0].name);
+    const studentsList = await query(
+      `
+      SELECT s.id AS student_id,
+        COUNT(vr.*) FILTER (WHERE vr.name = $1) AS dose_received
+      FROM student s
+      LEFT JOIN vaccination_record vr ON s.id = vr.student_id
+      LEFT JOIN disease d ON vr.name = d.name
+      GROUP BY s.id
+    `,
+      [disease.rows[0].name]
+    );
+    console.log("Disease:", disease.rows[0].name);
 
-    // const eligibleStudents = studentsList.rows.filter(
-    //   (student) => student.dose_received < disease.rows[0].dose_quantity
-    // );
-    // if (eligibleStudents.length === 0) {
-    //   return res.status(404).json({ error: "No eligible students found" });
-    // }
+    const eligibleStudents = studentsList.rows.filter(
+      (student) => student.dose_received < disease.rows[0].dose_quantity
+    );
+    if (eligibleStudents.length === 0) {
+      return res.status(404).json({ error: "No eligible students found" });
+    }
 
     //Create registration requests for eligible students
-    eligibleStudents = getStudentEligibleForCampaign(req, res);
     if (!eligibleStudents || eligibleStudents.length === 0) {
       return res.status(404).json({ error: "No eligible students found" });
     }
