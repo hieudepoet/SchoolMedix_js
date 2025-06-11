@@ -46,7 +46,7 @@ export async function readDisease(req, res) {
 }
 
 // Update disease
-export async function update(req, res) {
+export async function updateDisease(req, res) {
   const { id } = req.params;
   const { disease_category, name, description, vaccine_need, dose_quantity } =
     req.body;
