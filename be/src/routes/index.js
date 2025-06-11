@@ -11,4 +11,5 @@ router.use("/", postRoutes);
 router.use("/", userRoutes);
 router.use("/", diseaseRoutes);
 router.use("/", vaccineRoutes);
+
 export default router;
