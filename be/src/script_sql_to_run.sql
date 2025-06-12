@@ -185,15 +185,13 @@ CREATE TABLE vaccination_record (
     description TEXT,
 	name TEXT NOT NULL, 
     location VARCHAR(255),
-    vaccination_date DATE NOT NULL,
+    vaccination_date DATE,
     status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'completed', 'missed', 'cancelled')),
     campaign_id INT, -- NULL nếu không thuộc campaign
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (register_id) REFERENCES vaccination_campaign_register(id),
     FOREIGN KEY (campaign_id) REFERENCES vaccination_campaign(id)
 );
-
-
 
 
 INSERT INTO vaccination_record (
@@ -242,6 +240,5 @@ VALUES
     'School Medix',
     'completed'
   );
-
 
 
