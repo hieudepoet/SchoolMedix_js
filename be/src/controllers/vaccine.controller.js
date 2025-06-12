@@ -232,7 +232,7 @@ export async function updateRegisterStatus(req, res) {
   const { id } = req.params;
   const { is_registered } = req.body;
 
-  if (is_registered === undefined) {
+  if (!is_registered || is_registered === undefined) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -260,6 +260,9 @@ export async function updateRegisterStatus(req, res) {
     const endDate = new Date(campaign.rows[0].end_date);
 
     if (currentDate < startDate || currentDate > endDate) {
+      console.log("Current Date:", currentDate);
+      console.log("Start Date:", startDate);
+      console.log("End Date:", endDate);
       return res.status(400).json({
         error: "Cannot update registration status outside campaign dates",
       });
@@ -323,13 +326,30 @@ export async function getStudentEligibleForCampaign(req, res) {
 // Record
 // Create pre-vaccination record for students who registered for the campaign
 export async function createPreVaccinationRecord(req, res) {
-  const { campaign_id } = req.body;
-
-  if (!campaign_id) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+  const { id } = req.params;
+  const campaign_id = id;
 
   try {
+    // Check if campaign exists
+    const campaigns = await query(
+      "SELECT * FROM vaccination_campaign WHERE id = $1",
+      [campaign_id]
+    );
+    if (campaigns.rows.length === 0) {
+      console.log("Campaign not found:", campaign_id);
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    // Get name of the disease from the vaccine in the campaign
+    const vaccine_id = campaigns.rows[0].vaccine_id;
+    const disease_id = await query(
+      "SELECT disease_id FROM vaccine WHERE id = $1",
+      [vaccine_id]
+    );
+    const disease_name = await query("SELECT name FROM disease WHERE id = $1", [
+      disease_id.rows[0].disease_id,
+    ]);
+
     // Get all students who registered for the campaign
     const registrations = await query(
       "SELECT * FROM vaccination_campaign_register WHERE campaign_id = $1 AND is_registered = true",
@@ -343,15 +363,21 @@ export async function createPreVaccinationRecord(req, res) {
     // Create pre-vaccination records for each registered student
     for (const registration of registrations.rows) {
       await query(
-        `INSERT INTO pre_vaccination_record (student_id, campaign_id, status)
-         VALUES ($1, $2, 'pending')`,
-        [registration.student_id, campaign_id]
+        `INSERT INTO vaccination_record (student_id, campaign_id, name, status)
+         VALUES ($1, $2, $3, 'pending')`,
+        [registration.student_id, campaign_id, disease_name.rows[0].name]
       );
     }
 
+    // Data to return
+    // Fetch all vaccination records for the campaign
+    const vaccinationRecords = await query(
+      "SELECT * FROM vaccination_record WHERE campaign_id = $1",
+      [campaign_id]
+    );
     return res.status(201).json({
       message: "Pre-vaccination records created for registered students",
-      data: registrations.rows,
+      data: vaccinationRecords,
     });
   } catch (error) {
     console.error("Error creating pre-vaccination record:", error);

@@ -8,6 +8,7 @@ import {
   getStudentEligibleForCampaign,
   createVaccinationRecord,
   createPreVaccinationRecord,
+  updateVaccinationRecord,
   getVaccinationRecord,
 } from "../controllers/vaccine.controller.js";
 
@@ -22,7 +23,8 @@ router.get(
   getStudentEligibleForCampaign
 );
 router.post("/create/vaccination-record", createVaccinationRecord);
-router.post("/create/pre-vaccination-record", createPreVaccinationRecord);
+router.post("/create/pre-vaccination-record/:id", createPreVaccinationRecord);
+router.patch("/update/vaccination-record/:id", updateVaccinationRecord);
 router.get("/get/vaccination-record/:id", getVaccinationRecord);
 
 export default router;
